@@ -71,9 +71,9 @@ claude mcp add conduit-tx -- conduit-tx-mcp
 ## Example prompts
 
 ```
-List all jobs for tenant demoisc
+List all jobs for tenant acme-corp
 Show me the last 5 runs for the WF Account Balances job — did any fail?
-Trigger the WF Account Balances job for tenant demoisc
+Trigger the WF Account Balances job for tenant acme-corp
 List all connectors and their fetch parameter schemas
 Help me build a map_fields config for a new balance flow
 ```
