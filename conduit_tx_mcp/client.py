@@ -17,7 +17,8 @@ class ConduitClient:
             return {}
         if not response.is_success:
             try:
-                detail = response.json().get("detail", response.text)
+                body = response.json()
+                detail = body.get("message") or body.get("detail") or response.text
             except Exception:
                 detail = response.text
             raise RuntimeError(f"HTTP {response.status_code}: {detail}")
