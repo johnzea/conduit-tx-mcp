@@ -24,7 +24,13 @@ Log in to the Conduit TX web app and go to **Settings → API Tokens**. Create a
 
 ### 2. Configure Claude Desktop
 
-Edit `~/Library/Application Support/Claude/claude_desktop_config.json`:
+Edit the config file for your OS:
+
+| OS | Path |
+|----|------|
+| macOS | `~/Library/Application Support/Claude/claude_desktop_config.json` |
+| Windows | `%APPDATA%\Claude\claude_desktop_config.json` |
+| Linux | `~/.config/Claude/claude_desktop_config.json` |
 
 ```json
 {
@@ -47,7 +53,8 @@ Restart Claude Desktop after saving.
 The config above puts `CONDUIT_TX_API_TOKEN` in plaintext in `claude_desktop_config.json`. Instead, you can store it in your OS credential store — macOS Keychain, Windows Credential Manager, or the Linux Secret Service/KWallet — and the server will find it automatically when the env var isn't set, via the [`keyring`](https://pypi.org/project/keyring/) package (installed as a dependency, works the same on every OS):
 
 ```bash
-python3 -m keyring set conduit-tx-mcp-api-token <your-os-username>
+python3 -m keyring set conduit-tx-mcp-api-token <your-os-username>   # macOS/Linux
+python -m keyring set conduit-tx-mcp-api-token <your-os-username>    # Windows
 # prompts for the token value
 ```
 
