@@ -1,33 +1,34 @@
-# Desktop token setup: how the Keychain wrapper works
+# Desktop token setup: how the OS credential store fallback works
 
-This documents the actual token setup running for Claude Desktop, beyond what the README's quickstart snippet shows — why it's structured this way, and a gotcha specific to machines where this repo's checkout lives on a non-boot volume.
+This documents the actual token setup running for Claude Desktop, beyond what the README's quickstart snippet shows — why it's structured this way, and a packaging gotcha specific to machines where this repo's checkout lives on a non-boot volume (macOS).
 
 ## Why not just put the token in `claude_desktop_config.json`?
 
-`claude_desktop_config.json` has no secret-store integration — whatever's in `mcpServers.conduit-tx.env` is static plaintext on disk, readable by anything that can read that file. `scripts/keychain-wrapper.sh` keeps `CONDUIT_TX_API_TOKEN` out of it: the token lives in the macOS Keychain instead, and the wrapper fetches it at launch.
+`claude_desktop_config.json` has no secret-store integration — whatever's in `mcpServers.conduit-tx.env` is static plaintext on disk, readable by anything that can read that file.
 
 ## How it works
 
-1. **One-time**, the token is stored in the Keychain as a generic password:
+`conduit_tx_mcp/server.py` reads `CONDUIT_TX_API_TOKEN` from the environment as before, but if it's unset, falls back to the [`keyring`](https://pypi.org/project/keyring/) package — which abstracts macOS Keychain, Windows Credential Manager, and the Linux Secret Service/KWallet behind one API — looking up the token under service `conduit-tx-mcp-api-token` and the current OS username (`getpass.getuser()`).
+
+1. **One-time**, store the token in your OS credential store:
    ```bash
-   security add-generic-password -a "$(whoami)" -s "conduit-tx-mcp-api-token" -w "<your-token>"
+   python3 -m keyring set conduit-tx-mcp-api-token <your-os-username>
    ```
-2. Claude Desktop's config points `command` at the wrapper script instead of `conduit-tx-mcp` directly, and drops `CONDUIT_TX_API_TOKEN` from `env` (`CONDUIT_TX_API_URL` stays — it isn't a secret).
-3. At launch, the wrapper runs `security find-generic-password ... -w` to read the token back out of the Keychain, exports it as `CONDUIT_TX_API_TOKEN`, and `exec`s `conduit-tx-mcp`.
+2. Drop `CONDUIT_TX_API_TOKEN` from Claude Desktop's `env` block entirely (`CONDUIT_TX_API_URL` stays — it isn't a secret). `command` is plain `conduit-tx-mcp`, same as the non-Keychain setup — no wrapper script involved.
+3. At import time, `server.py` checks the env var first, then `keyring.get_password("conduit-tx-mcp-api-token", getpass.getuser())`. If neither has a value, it raises with a message telling you the exact `keyring set` command to run.
 
-The script uses `whoami`, not the `$USER` env var — Claude Desktop launches MCP servers with only the specific env vars listed in its config, not a full inherited shell environment, so `$USER` is unset in that context and would make the Keychain lookup fail silently on account mismatch.
+This works identically on macOS, Windows, and Linux — there's no per-OS wrapper script to maintain (an earlier version of this setup used a macOS-only bash script calling `security` directly; it's been replaced by this in-process fallback).
 
-**What this does and doesn't protect against:** it protects the token from anything reading `claude_desktop_config.json` at rest. It does not protect against a fully compromised login session — the Keychain unlocks with your Mac account, same as the config file would be readable in that scenario.
+**What this does and doesn't protect against:** it protects the token from anything reading `claude_desktop_config.json` at rest. It does not protect against a fully compromised login session — the credential store unlocks with your OS account, same as the config file would be readable in that scenario.
 
-## Gotcha: this repo's checkout lives on `/Volumes/Data`, a non-boot volume
+## Packaging gotcha (macOS): this repo's checkout lives on `/Volumes/Data`
 
-If your `conduit-tx-mcp` clone is on a secondary/external volume (e.g. `/Volumes/Data/...` rather than under `/Users/<you>/...` or a Homebrew-managed path), Claude Desktop's spawned MCP processes cannot read or execute *anything* on that volume — confirmed by testing both a direct script exec and `/bin/bash <script-on-other-volume>` as the launcher; both failed with `Operation not permitted`. This isn't about which binary does the reading, and it can't be reproduced by testing from a Terminal session, since Terminal isn't sandboxed the same way Desktop's child processes are.
+This section only matters if your `conduit-tx-mcp` clone is on a secondary/external volume (e.g. `/Volumes/Data/...` rather than under `/Users/<you>/...` or a Homebrew-managed path).
 
-Two things follow from this, both already applied on this machine:
+Claude Desktop's spawned MCP processes cannot read or execute *anything* on such a volume — confirmed by testing both a direct script exec and `/bin/bash <script-on-other-volume>` as the launcher; both failed with `Operation not permitted`. This isn't about which binary does the reading, and it can't be reproduced by testing from a Terminal session, since Terminal isn't sandboxed the same way Desktop's child processes are.
 
-- **The wrapper script Desktop actually runs is a boot-volume copy**, not the one in this repo. It lives at `~/.local/bin/conduit-tx-mcp-keychain-wrapper.sh` and is functionally identical to `scripts/keychain-wrapper.sh` here — but it's a real copy, not a symlink (a symlink would still resolve reads through to the blocked volume). If you edit `scripts/keychain-wrapper.sh`, you have to manually re-copy it to the boot-volume location; it's intentionally not git-tracked from there.
-- **`conduit-tx-mcp` must be installed non-editable** (`pip install /path/to/conduit-tx-mcp --break-system-packages`, no `-e`). An editable install's `.pth` link points straight back at this repo's `conduit_tx_mcp/` source — so even with the wrapper script relocated, `exec conduit-tx-mcp` would hit the same cross-volume block one import deeper. A regular install copies the actual `.py` files into `site-packages` on the boot volume, removing any runtime dependency on the other volume being reachable.
+Consequence: **`conduit-tx-mcp` must be installed non-editable** (`pip install /path/to/conduit-tx-mcp --break-system-packages`, no `-e`). An editable install's `.pth` link points straight back at this repo's `conduit_tx_mcp/` source on the blocked volume; a regular install copies the actual `.py` files into `site-packages` on the boot volume, removing any runtime dependency on the other volume being reachable. `command` can then be plain `conduit-tx-mcp` (resolved via PATH to a boot-volume location like `/opt/homebrew/bin/conduit-tx-mcp`) with no wrapper script needed.
 
-Practical consequence: after merging a `conduit-tx-mcp` PR, `git pull` alone doesn't update what Desktop is running. Re-run the non-editable install to refresh the boot-volume copy, and re-copy `scripts/keychain-wrapper.sh` to `~/.local/bin/` if it changed.
+Practical consequence: after merging a `conduit-tx-mcp` PR, `git pull` alone doesn't update what Desktop is running — re-run the non-editable install to refresh the boot-volume copy.
 
-If your checkout is under your home directory or another boot-volume path, none of this section applies — point Desktop's `command` straight at `scripts/keychain-wrapper.sh` and use a normal (or editable, if you want live-reload during development) install.
+If your checkout is under your home directory or another boot-volume path, none of this applies — a normal (or editable, for live-reload during development) install works fine.
