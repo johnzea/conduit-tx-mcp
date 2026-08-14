@@ -28,7 +28,7 @@ class ConduitClient:
     # Tenants
     # ------------------------------------------------------------------
 
-    async def list_tenants(self) -> list:
+    async def list_tenants(self) -> dict:
         return await self._request("GET", "/api/v1/tenants/")
 
     async def get_tenant(self, tenant_id: str) -> dict:
@@ -57,7 +57,7 @@ class ConduitClient:
     # Job runs
     # ------------------------------------------------------------------
 
-    async def list_job_runs(self, tenant_id: str, job_id: str, limit: int = 10) -> list:
+    async def list_job_runs(self, tenant_id: str, job_id: str, limit: int = 10) -> dict:
         return await self._request(
             "GET",
             f"/api/v1/tenants/{tenant_id}/jobs/{job_id}/runs",
@@ -98,7 +98,7 @@ class ConduitClient:
     # Connectors
     # ------------------------------------------------------------------
 
-    async def list_connectors(self) -> list:
+    async def list_connectors(self) -> dict:
         return await self._request("GET", "/api/v1/connectors/")
 
     async def get_connector(self, connector_id: str) -> dict:
@@ -115,7 +115,7 @@ class ConduitClient:
     # Reference cache
     # ------------------------------------------------------------------
 
-    async def get_ref_cache_status(self, tenant_id: str) -> list:
+    async def get_ref_cache_status(self, tenant_id: str) -> dict:
         return await self._request("GET", f"/api/v1/tenants/{tenant_id}/reference-cache")
 
     async def refresh_ref_cache(self, tenant_id: str, data_type: str) -> dict:
