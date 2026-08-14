@@ -47,7 +47,7 @@ Restart Claude Desktop after saving.
 The config above puts `CONDUIT_TX_API_TOKEN` in plaintext in `claude_desktop_config.json`. On macOS you can keep it in the Keychain instead and have a wrapper script inject it at launch:
 
 ```bash
-security add-generic-password -a "$USER" -s "conduit-tx-mcp-api-token" -w "<your-token>"
+security add-generic-password -a "$(whoami)" -s "conduit-tx-mcp-api-token" -w "<your-token>"
 ```
 
 Then point `command` at `scripts/keychain-wrapper.sh` (absolute path to your clone) instead of `conduit-tx-mcp`, and drop `CONDUIT_TX_API_TOKEN` from `env` (`CONDUIT_TX_API_URL` isn't a secret, so it stays):

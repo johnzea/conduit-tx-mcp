@@ -3,14 +3,18 @@
 # Keychain instead of a plaintext env var in claude_desktop_config.json.
 #
 # One-time setup:
-#   security add-generic-password -a "$USER" -s "conduit-tx-mcp-api-token" -w "<your-token>"
+#   security add-generic-password -a "$(whoami)" -s "conduit-tx-mcp-api-token" -w "<your-token>"
 #
 # Then point Claude Desktop's mcpServers.conduit-tx.command at this script's
 # absolute path and drop CONDUIT_TX_API_TOKEN from its env block (keep
 # CONDUIT_TX_API_URL there — it isn't a secret).
+#
+# Uses `whoami` rather than $USER: Claude Desktop launches MCP servers with
+# only the specific env vars listed in its config, not a full inherited
+# shell environment, so $USER is unset in that context.
 set -euo pipefail
 
-CONDUIT_TX_API_TOKEN="$(security find-generic-password -a "$USER" -s "conduit-tx-mcp-api-token" -w)"
+CONDUIT_TX_API_TOKEN="$(security find-generic-password -a "$(whoami)" -s "conduit-tx-mcp-api-token" -w)"
 export CONDUIT_TX_API_TOKEN
 
 exec conduit-tx-mcp
