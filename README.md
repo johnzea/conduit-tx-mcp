@@ -42,6 +42,31 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 Restart Claude Desktop after saving.
 
+#### macOS: keeping the token out of the config file (recommended)
+
+The config above puts `CONDUIT_TX_API_TOKEN` in plaintext in `claude_desktop_config.json`. On macOS you can keep it in the Keychain instead and have a wrapper script inject it at launch:
+
+```bash
+security add-generic-password -a "$USER" -s "conduit-tx-mcp-api-token" -w "<your-token>"
+```
+
+Then point `command` at `scripts/keychain-wrapper.sh` (absolute path to your clone) instead of `conduit-tx-mcp`, and drop `CONDUIT_TX_API_TOKEN` from `env` (`CONDUIT_TX_API_URL` isn't a secret, so it stays):
+
+```json
+{
+  "mcpServers": {
+    "conduit-tx": {
+      "command": "/absolute/path/to/conduit-tx-mcp/scripts/keychain-wrapper.sh",
+      "env": {
+        "CONDUIT_TX_API_URL": "https://staging.conduit-tx.com"
+      }
+    }
+  }
+}
+```
+
+This only protects the token from anything reading the config file at rest — it doesn't help if your Mac login itself is compromised, since the Keychain unlocks with that.
+
 ### 3. Configure Claude Code
 
 ```bash
