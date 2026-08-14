@@ -29,7 +29,7 @@ client = ConduitClient(API_URL, API_TOKEN)
 
 
 @mcp.tool()
-async def list_tenants() -> list:
+async def list_tenants() -> dict:
     """List all tenants."""
     try:
         return await client.list_tenants()
@@ -65,7 +65,7 @@ async def get_job(tenant_id: str, job_id: str) -> dict:
 
 
 @mcp.tool()
-async def list_job_runs(tenant_id: str, job_id: str, limit: int = 10) -> list:
+async def list_job_runs(tenant_id: str, job_id: str, limit: int = 10) -> dict:
     """List recent runs for a job. Returns up to `limit` runs (default 10)."""
     try:
         return await client.list_job_runs(tenant_id, job_id, limit=limit)
@@ -128,7 +128,7 @@ async def list_connector_configs(tenant_id: str) -> list:
 
 
 @mcp.tool()
-async def get_ref_cache_status(tenant_id: str) -> list:
+async def get_ref_cache_status(tenant_id: str) -> dict:
     """Get the reference data cache status for a tenant."""
     try:
         return await client.get_ref_cache_status(tenant_id)
@@ -255,7 +255,7 @@ async def refresh_ref_cache(tenant_id: str, data_type: str) -> dict:
 
 
 @mcp.tool()
-async def list_connectors() -> list:
+async def list_connectors() -> dict:
     """List all registered connectors, including their fetch parameter schemas."""
     try:
         return await client.list_connectors()
