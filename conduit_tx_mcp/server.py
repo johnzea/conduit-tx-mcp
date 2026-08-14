@@ -2,22 +2,38 @@
 
 Exposes Conduit TX REST API operations as Claude tools via the MCP stdio transport.
 
-Environment variables (required):
-    CONDUIT_TX_API_URL    Base URL of your Conduit TX instance
+Environment variables:
+    CONDUIT_TX_API_URL    Required. Base URL of your Conduit TX instance
                           e.g. https://staging.conduit-tx.com
-    CONDUIT_TX_API_TOKEN  Long-lived API token from Settings → API Tokens
+    CONDUIT_TX_API_TOKEN  Long-lived API token from Settings → API Tokens.
+                          If unset, falls back to the OS credential store
+                          (macOS Keychain / Windows Credential Manager /
+                          Linux Secret Service) via the `keyring` package,
+                          under service "conduit-tx-mcp-api-token" and the
+                          current OS username. See docs/desktop-token-keychain.md.
 """
 
+import getpass
 import json
 import os
 
+import keyring
 from fastmcp import FastMCP
 from fastmcp.exceptions import ToolError
 
 from conduit_tx_mcp.client import ConduitClient
 
+KEYRING_SERVICE = "conduit-tx-mcp-api-token"
+
 API_URL = os.environ["CONDUIT_TX_API_URL"]
-API_TOKEN = os.environ["CONDUIT_TX_API_TOKEN"]
+API_TOKEN = os.environ.get("CONDUIT_TX_API_TOKEN") or keyring.get_password(KEYRING_SERVICE, getpass.getuser())
+if not API_TOKEN:
+    raise RuntimeError(
+        "CONDUIT_TX_API_TOKEN is not set and no token was found in the OS credential "
+        f"store under service '{KEYRING_SERVICE}' for user '{getpass.getuser()}'. "
+        "Set the env var, or store one with: "
+        f"python3 -m keyring set {KEYRING_SERVICE} {getpass.getuser()}"
+    )
 
 mcp = FastMCP("conduit-tx")
 client = ConduitClient(API_URL, API_TOKEN)

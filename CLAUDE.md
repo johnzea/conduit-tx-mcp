@@ -24,7 +24,7 @@ Tools that take structured input the API expects as JSON (`save_flow_graph`'s `n
 
 ## Configuration
 
-The server reads two required env vars at import time (`server.py` top level, not lazily) — `CONDUIT_TX_API_URL` and `CONDUIT_TX_API_TOKEN`. There is no `.env` loading or default; missing either will raise `KeyError` on startup. The entry point is `conduit_tx_mcp.server:main`, registered as the `conduit-tx-mcp` console script in `pyproject.toml`.
+The server reads config at import time (`server.py` top level, not lazily), not via `.env` loading. `CONDUIT_TX_API_URL` is a required env var — missing it raises `KeyError` on startup. `CONDUIT_TX_API_TOKEN` is checked in the env first; if unset, it falls back to `keyring.get_password("conduit-tx-mcp-api-token", getpass.getuser())` (macOS Keychain / Windows Credential Manager / Linux Secret Service, via the `keyring` package). If neither source has a value, startup raises with a message naming the exact `keyring set` command to run — see `docs/desktop-token-keychain.md`. The entry point is `conduit_tx_mcp.server:main`, registered as the `conduit-tx-mcp` console script in `pyproject.toml`.
 
 ## Running / testing locally
 

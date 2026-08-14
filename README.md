@@ -42,21 +42,22 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 Restart Claude Desktop after saving.
 
-#### macOS: keeping the token out of the config file (recommended)
+#### Keeping the token out of the config file (recommended)
 
-The config above puts `CONDUIT_TX_API_TOKEN` in plaintext in `claude_desktop_config.json`. On macOS you can keep it in the Keychain instead and have a wrapper script inject it at launch:
+The config above puts `CONDUIT_TX_API_TOKEN` in plaintext in `claude_desktop_config.json`. Instead, you can store it in your OS credential store — macOS Keychain, Windows Credential Manager, or the Linux Secret Service/KWallet — and the server will find it automatically when the env var isn't set, via the [`keyring`](https://pypi.org/project/keyring/) package (installed as a dependency, works the same on every OS):
 
 ```bash
-security add-generic-password -a "$(whoami)" -s "conduit-tx-mcp-api-token" -w "<your-token>"
+python3 -m keyring set conduit-tx-mcp-api-token <your-os-username>
+# prompts for the token value
 ```
 
-Then point `command` at `scripts/keychain-wrapper.sh` (absolute path to your clone) instead of `conduit-tx-mcp`, and drop `CONDUIT_TX_API_TOKEN` from `env` (`CONDUIT_TX_API_URL` isn't a secret, so it stays):
+Then drop `CONDUIT_TX_API_TOKEN` from `env` entirely (`CONDUIT_TX_API_URL` isn't a secret, so it stays) — `command` goes back to plain `conduit-tx-mcp`, no wrapper script needed:
 
 ```json
 {
   "mcpServers": {
     "conduit-tx": {
-      "command": "/absolute/path/to/conduit-tx-mcp/scripts/keychain-wrapper.sh",
+      "command": "conduit-tx-mcp",
       "env": {
         "CONDUIT_TX_API_URL": "https://staging.conduit-tx.com"
       }
@@ -65,9 +66,9 @@ Then point `command` at `scripts/keychain-wrapper.sh` (absolute path to your clo
 }
 ```
 
-This only protects the token from anything reading the config file at rest — it doesn't help if your Mac login itself is compromised, since the Keychain unlocks with that.
+This only protects the token from anything reading the config file at rest — it doesn't help if your OS login itself is compromised, since the credential store unlocks with that.
 
-See [docs/desktop-token-keychain.md](docs/desktop-token-keychain.md) for how this works in detail, including a gotcha if your clone lives on a non-boot volume.
+See [docs/desktop-token-keychain.md](docs/desktop-token-keychain.md) for how this works in detail, including a packaging gotcha if your clone lives on a non-boot volume (macOS).
 
 ### 3. Configure Claude Code
 
@@ -82,7 +83,7 @@ claude mcp add conduit-tx -- conduit-tx-mcp
 | Variable | Description |
 |----------|-------------|
 | `CONDUIT_TX_API_URL` | Base URL of your Conduit TX instance |
-| `CONDUIT_TX_API_TOKEN` | Long-lived API token from Settings → API Tokens |
+| `CONDUIT_TX_API_TOKEN` | Long-lived API token from Settings → API Tokens. Optional if one is stored in your OS credential store — see above. |
 
 ## Available tools
 
