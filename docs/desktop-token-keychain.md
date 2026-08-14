@@ -22,9 +22,9 @@ This works identically on macOS, Windows, and Linux — there's no per-OS wrappe
 
 **What this does and doesn't protect against:** it protects the token from anything reading `claude_desktop_config.json` at rest. It does not protect against a fully compromised login session — the credential store unlocks with your OS account, same as the config file would be readable in that scenario.
 
-## Packaging gotcha (macOS): this repo's checkout lives on `/Volumes/Data`
+## Packaging gotcha (macOS): non-boot-volume checkouts
 
-This section only matters if your `conduit-tx-mcp` clone is on a secondary/external volume (e.g. `/Volumes/Data/...` rather than under `/Users/<you>/...` or a Homebrew-managed path).
+This section only matters if your `conduit-tx-mcp` clone is on a secondary/external volume (e.g. mounted at `/Volumes/<name>` rather than under `/Users/<you>/...` or a Homebrew-managed path).
 
 Claude Desktop's spawned MCP processes cannot read or execute *anything* on such a volume — confirmed by testing both a direct script exec and `/bin/bash <script-on-other-volume>` as the launcher; both failed with `Operation not permitted`. This isn't about which binary does the reading, and it can't be reproduced by testing from a Terminal session, since Terminal isn't sandboxed the same way Desktop's child processes are.
 
