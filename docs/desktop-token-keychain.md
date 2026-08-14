@@ -12,7 +12,8 @@ This documents the actual token setup running for Claude Desktop, beyond what th
 
 1. **One-time**, store the token in your OS credential store:
    ```bash
-   python3 -m keyring set conduit-tx-mcp-api-token <your-os-username>
+   python3 -m keyring set conduit-tx-mcp-api-token <your-os-username>   # macOS/Linux
+   python -m keyring set conduit-tx-mcp-api-token <your-os-username>    # Windows
    ```
 2. Drop `CONDUIT_TX_API_TOKEN` from Claude Desktop's `env` block entirely (`CONDUIT_TX_API_URL` stays — it isn't a secret). `command` is plain `conduit-tx-mcp`, same as the non-Keychain setup — no wrapper script involved.
 3. At import time, `server.py` checks the env var first, then `keyring.get_password("conduit-tx-mcp-api-token", getpass.getuser())`. If neither has a value, it raises with a message telling you the exact `keyring set` command to run.
