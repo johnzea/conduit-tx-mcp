@@ -12,6 +12,7 @@ import json
 import os
 
 from fastmcp import FastMCP
+from fastmcp.exceptions import ToolError
 
 from conduit_tx_mcp.client import ConduitClient
 
@@ -22,125 +23,117 @@ mcp = FastMCP("conduit-tx")
 client = ConduitClient(API_URL, API_TOKEN)
 
 
-def _ok(data) -> str:
-    return json.dumps(data, default=str, indent=2)
-
-
-def _err(exc: Exception) -> str:
-    return f"Error: {exc}"
-
-
 # ===========================================================================
 # UC1 — Operational monitoring (read-only)
 # ===========================================================================
 
 
 @mcp.tool()
-async def list_tenants() -> str:
+async def list_tenants() -> list:
     """List all tenants."""
     try:
-        return _ok(await client.list_tenants())
+        return await client.list_tenants()
     except RuntimeError as exc:
-        return _err(exc)
+        raise ToolError(str(exc)) from exc
 
 
 @mcp.tool()
-async def get_tenant(tenant_id: str) -> str:
+async def get_tenant(tenant_id: str) -> dict:
     """Get a single tenant by ID."""
     try:
-        return _ok(await client.get_tenant(tenant_id))
+        return await client.get_tenant(tenant_id)
     except RuntimeError as exc:
-        return _err(exc)
+        raise ToolError(str(exc)) from exc
 
 
 @mcp.tool()
-async def list_jobs(tenant_id: str) -> str:
+async def list_jobs(tenant_id: str) -> list:
     """List all job definitions for a tenant."""
     try:
-        return _ok(await client.list_jobs(tenant_id))
+        return await client.list_jobs(tenant_id)
     except RuntimeError as exc:
-        return _err(exc)
+        raise ToolError(str(exc)) from exc
 
 
 @mcp.tool()
-async def get_job(tenant_id: str, job_id: str) -> str:
+async def get_job(tenant_id: str, job_id: str) -> dict:
     """Get a job definition by ID."""
     try:
-        return _ok(await client.get_job(tenant_id, job_id))
+        return await client.get_job(tenant_id, job_id)
     except RuntimeError as exc:
-        return _err(exc)
+        raise ToolError(str(exc)) from exc
 
 
 @mcp.tool()
-async def list_job_runs(tenant_id: str, job_id: str, limit: int = 10) -> str:
+async def list_job_runs(tenant_id: str, job_id: str, limit: int = 10) -> list:
     """List recent runs for a job. Returns up to `limit` runs (default 10)."""
     try:
-        return _ok(await client.list_job_runs(tenant_id, job_id, limit=limit))
+        return await client.list_job_runs(tenant_id, job_id, limit=limit)
     except RuntimeError as exc:
-        return _err(exc)
+        raise ToolError(str(exc)) from exc
 
 
 @mcp.tool()
-async def get_job_run(tenant_id: str, run_id: str) -> str:
+async def get_job_run(tenant_id: str, run_id: str) -> dict:
     """Get a job run by ID, including all node run outputs."""
     try:
-        return _ok(await client.get_job_run(tenant_id, run_id))
+        return await client.get_job_run(tenant_id, run_id)
     except RuntimeError as exc:
-        return _err(exc)
+        raise ToolError(str(exc)) from exc
 
 
 @mcp.tool()
-async def list_flows(tenant_id: str, job_id: str) -> str:
+async def list_flows(tenant_id: str, job_id: str) -> list:
     """List all flows for a job."""
     try:
-        return _ok(await client.list_flows(tenant_id, job_id))
+        return await client.list_flows(tenant_id, job_id)
     except RuntimeError as exc:
-        return _err(exc)
+        raise ToolError(str(exc)) from exc
 
 
 @mcp.tool()
-async def get_flow(tenant_id: str, job_id: str, flow_id: str) -> str:
+async def get_flow(tenant_id: str, job_id: str, flow_id: str) -> dict:
     """Get a flow with its full node/edge graph."""
     try:
-        return _ok(await client.get_flow(tenant_id, job_id, flow_id))
+        return await client.get_flow(tenant_id, job_id, flow_id)
     except RuntimeError as exc:
-        return _err(exc)
+        raise ToolError(str(exc)) from exc
 
 
 @mcp.tool()
-async def list_flow_runs(tenant_id: str, run_id: str) -> str:
+async def list_flow_runs(tenant_id: str, run_id: str) -> list:
     """List all flow runs for a job run."""
     try:
-        return _ok(await client.list_flow_runs(tenant_id, run_id))
+        return await client.list_flow_runs(tenant_id, run_id)
     except RuntimeError as exc:
-        return _err(exc)
+        raise ToolError(str(exc)) from exc
 
 
 @mcp.tool()
-async def get_flow_run(tenant_id: str, flow_run_id: str) -> str:
+async def get_flow_run(tenant_id: str, flow_run_id: str) -> dict:
     """Get a flow run by ID, including per-node status and output_json."""
     try:
-        return _ok(await client.get_flow_run(tenant_id, flow_run_id))
+        return await client.get_flow_run(tenant_id, flow_run_id)
     except RuntimeError as exc:
-        return _err(exc)
+        raise ToolError(str(exc)) from exc
 
 
 @mcp.tool()
-async def list_connector_configs(tenant_id: str) -> str:
+async def list_connector_configs(tenant_id: str) -> list:
     """List all connector configurations for a tenant."""
     try:
-        return _ok(await client.list_connector_configs(tenant_id))
+        return await client.list_connector_configs(tenant_id)
     except RuntimeError as exc:
-        return _err(exc)
+        raise ToolError(str(exc)) from exc
 
 
 @mcp.tool()
-async def get_ref_cache_status(tenant_id: str) -> str:
+async def get_ref_cache_status(tenant_id: str) -> list:
     """Get the reference data cache status for a tenant."""
     try:
-        return _ok(await client.get_ref_cache_status(tenant_id))
+        return await client.get_ref_cache_status(tenant_id)
     except RuntimeError as exc:
-        return _err(exc)
+        raise ToolError(str(exc)) from exc
 
 
 # ===========================================================================
@@ -149,12 +142,12 @@ async def get_ref_cache_status(tenant_id: str) -> str:
 
 
 @mcp.tool()
-async def trigger_job(tenant_id: str, job_id: str) -> str:
+async def trigger_job(tenant_id: str, job_id: str) -> dict:
     """Trigger an immediate job run. Returns the new run ID and status."""
     try:
-        return _ok(await client.trigger_job(tenant_id, job_id))
+        return await client.trigger_job(tenant_id, job_id)
     except RuntimeError as exc:
-        return _err(exc)
+        raise ToolError(str(exc)) from exc
 
 
 @mcp.tool()
@@ -167,7 +160,7 @@ async def create_job(
     source_connector_config_ids: list[str] | None = None,
     dest_connector_config_id: str = "",
     environment: str = "test",
-) -> str:
+) -> dict:
     """Create a new job definition.
 
     Args:
@@ -193,9 +186,9 @@ async def create_job(
     if dest_connector_config_id:
         payload["dest_connector_config_id"] = dest_connector_config_id
     try:
-        return _ok(await client.create_job(tenant_id, payload))
+        return await client.create_job(tenant_id, payload)
     except RuntimeError as exc:
-        return _err(exc)
+        raise ToolError(str(exc)) from exc
 
 
 @mcp.tool()
@@ -208,7 +201,7 @@ async def update_job(
     schedule_timezone: str = "",
     is_active: bool | None = None,
     environment: str = "",
-) -> str:
+) -> dict:
     """Update fields on a job definition. Only non-empty values are sent.
 
     Args:
@@ -235,15 +228,15 @@ async def update_job(
     if environment:
         payload["environment"] = environment
     if not payload:
-        return "Error: no fields provided to update"
+        raise ToolError("no fields provided to update")
     try:
-        return _ok(await client.update_job(tenant_id, job_id, payload))
+        return await client.update_job(tenant_id, job_id, payload)
     except RuntimeError as exc:
-        return _err(exc)
+        raise ToolError(str(exc)) from exc
 
 
 @mcp.tool()
-async def refresh_ref_cache(tenant_id: str, data_type: str) -> str:
+async def refresh_ref_cache(tenant_id: str, data_type: str) -> dict:
     """Refresh a specific reference data cache type for a tenant.
 
     Args:
@@ -251,9 +244,9 @@ async def refresh_ref_cache(tenant_id: str, data_type: str) -> str:
         data_type: Cache type to refresh (e.g. "bank_accounts", "cost_centers")
     """
     try:
-        return _ok(await client.refresh_ref_cache(tenant_id, data_type))
+        return await client.refresh_ref_cache(tenant_id, data_type)
     except RuntimeError as exc:
-        return _err(exc)
+        raise ToolError(str(exc)) from exc
 
 
 # ===========================================================================
@@ -262,21 +255,21 @@ async def refresh_ref_cache(tenant_id: str, data_type: str) -> str:
 
 
 @mcp.tool()
-async def list_connectors() -> str:
+async def list_connectors() -> list:
     """List all registered connectors, including their fetch parameter schemas."""
     try:
-        return _ok(await client.list_connectors())
+        return await client.list_connectors()
     except RuntimeError as exc:
-        return _err(exc)
+        raise ToolError(str(exc)) from exc
 
 
 @mcp.tool()
-async def get_connector(connector_id: str) -> str:
+async def get_connector(connector_id: str) -> dict:
     """Get a connector's full schema including FETCH_PARAMS_SCHEMA and REQUIRED_CREDENTIALS."""
     try:
-        return _ok(await client.get_connector(connector_id))
+        return await client.get_connector(connector_id)
     except RuntimeError as exc:
-        return _err(exc)
+        raise ToolError(str(exc)) from exc
 
 
 @mcp.tool()
@@ -286,7 +279,7 @@ async def save_flow_graph(
     flow_id: str,
     nodes_json: str,
     edges_json: str,
-) -> str:
+) -> dict:
     """Save a complete flow graph (nodes + edges).
 
     Args:
@@ -300,11 +293,11 @@ async def save_flow_graph(
         nodes = json.loads(nodes_json)
         edges = json.loads(edges_json)
     except json.JSONDecodeError as exc:
-        return f"Error: invalid JSON — {exc}"
+        raise ToolError(f"invalid JSON — {exc}") from exc
     try:
-        return _ok(await client.save_flow_graph(tenant_id, job_id, flow_id, {"nodes": nodes, "edges": edges}))
+        return await client.save_flow_graph(tenant_id, job_id, flow_id, {"nodes": nodes, "edges": edges})
     except RuntimeError as exc:
-        return _err(exc)
+        raise ToolError(str(exc)) from exc
 
 
 @mcp.tool()
@@ -314,7 +307,7 @@ async def preview_transform(
     flow_id: str,
     node_id: str,
     input_records_json: str,
-) -> str:
+) -> dict:
     """Preview the output of a transform node against sample input records.
 
     Args:
@@ -327,20 +320,20 @@ async def preview_transform(
     try:
         records = json.loads(input_records_json)
     except json.JSONDecodeError as exc:
-        return f"Error: invalid JSON — {exc}"
+        raise ToolError(f"invalid JSON — {exc}") from exc
     try:
-        return _ok(await client.preview_transform(tenant_id, job_id, flow_id, node_id, {"records": records}))
+        return await client.preview_transform(tenant_id, job_id, flow_id, node_id, {"records": records})
     except RuntimeError as exc:
-        return _err(exc)
+        raise ToolError(str(exc)) from exc
 
 
 @mcp.tool()
-async def list_destination_schemas() -> str:
+async def list_destination_schemas() -> list:
     """List all destination endpoint schemas (payload shapes for destination connectors)."""
     try:
-        return _ok(await client.list_destination_schemas())
+        return await client.list_destination_schemas()
     except RuntimeError as exc:
-        return _err(exc)
+        raise ToolError(str(exc)) from exc
 
 
 def main() -> None:
