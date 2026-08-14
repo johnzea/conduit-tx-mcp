@@ -67,6 +67,8 @@ Then point `command` at `scripts/keychain-wrapper.sh` (absolute path to your clo
 
 This only protects the token from anything reading the config file at rest — it doesn't help if your Mac login itself is compromised, since the Keychain unlocks with that.
 
+See [docs/desktop-token-keychain.md](docs/desktop-token-keychain.md) for how this works in detail, including a gotcha if your clone lives on a non-boot volume.
+
 ### 3. Configure Claude Code
 
 ```bash
