@@ -16,11 +16,11 @@ The whole server is two files:
   - **UC2 — control** (read/write): `trigger_job`, `create_job`, `update_job`, `refresh_ref_cache`
   - **UC3 — flow authoring**: `list_connectors`, `get_connector`, `save_flow_graph`, `preview_transform`, `list_destination_schemas`
 
-Every tool follows the same shape: call the matching `ConduitClient` method, wrap success in `_ok()` (JSON-serializes with `indent=2`, `default=str`), catch `RuntimeError` and return `_err(exc)` (a plain `"Error: ..."` string — MCP tools return errors as strings, not exceptions, so the model sees them as regular tool output). When adding a new endpoint, add the method to `client.py` first, then a corresponding tool in `server.py` using this same try/except pattern.
+Every tool follows the same shape: call the matching `ConduitClient` method and return its result (`dict`/`list`) directly. Because the return type is a plain `dict`/`list` rather than a pre-serialized string, FastMCP auto-generates each tool's `outputSchema` and populates `CallToolResult.structuredContent`, instead of the model having to parse a JSON blob out of text content. On failure, catch `RuntimeError` and re-raise as `fastmcp.exceptions.ToolError(str(exc))`, which FastMCP converts into a proper `isError: true` tool result — errors are protocol-level, not a string convention the model has to pattern-match on. When adding a new endpoint, add the method to `client.py` first, then a corresponding tool in `server.py` using this same try/except/raise pattern.
 
-Tools that take structured input the API expects as JSON (`save_flow_graph`'s `nodes_json`/`edges_json`, `preview_transform`'s `input_records_json`) accept it as a **JSON string parameter**, not a nested object — this is a FastMCP/tool-schema constraint. Each such tool does its own `json.loads` and returns a distinct `"Error: invalid JSON — ..."` message on parse failure, separate from the API-error path.
+Tools that take structured input the API expects as JSON (`save_flow_graph`'s `nodes_json`/`edges_json`, `preview_transform`'s `input_records_json`) accept it as a **JSON string parameter**, not a nested object — this is a FastMCP/tool-schema constraint (applies to inputs only; outputs are structured, see above). Each such tool does its own `json.loads` and raises `ToolError(f"invalid JSON — {exc}")` on parse failure, separate from the API-error path.
 
-`create_job`/`update_job` build their request payload by conditionally including only non-empty/non-None fields — `update_job` explicitly rejects an all-empty call before hitting the API (`"Error: no fields provided to update"`).
+`create_job`/`update_job` build their request payload by conditionally including only non-empty/non-None fields — `update_job` explicitly rejects an all-empty call before hitting the API (`raise ToolError("no fields provided to update")`).
 
 ## Configuration
 
